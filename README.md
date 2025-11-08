@@ -16,6 +16,9 @@ bash start.sh
 
 これで自動的にセットアップ・起動されます！その後、ブラウザで **http://localhost:3000** を開いてください。
 
+📖 **詳しい使い方を知りたい方へ:**
+[初心者向けガイド (GETTING_STARTED.md)](./GETTING_STARTED.md) を参照してください。
+
 ---
 
 ## 機能
