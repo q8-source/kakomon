@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クイズゲーム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .start-screen,
+        .quiz-screen,
+        .result-screen {
+            display: none;
+        }
+
+        .start-screen.active,
+        .quiz-screen.active,
+        .result-screen.active {
+            display: block;
+        }
+
+        .start-btn,
+        .restart-btn,
+        .next-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: block;
+            margin: 20px auto;
+        }
+
+        .start-btn:hover,
+        .restart-btn:hover,
+        .next-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .start-btn:active,
+        .restart-btn:active,
+        .next-btn:active {
+            transform: translateY(0);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .question-counter {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .question-text {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+
+        .option:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .option.correct {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+
+        .option.incorrect {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .option.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .result-screen {
+            text-align: center;
+        }
+
+        .score {
+            font-size: 48px;
+            color: #667eea;
+            margin: 30px 0;
+            font-weight: bold;
+        }
+
+        .score-message {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .score-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .intro-text {
+            text-align: center;
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .next-btn {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .next-btn.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 クイズゲーム</h1>
+
+        <!-- スタート画面 -->
+        <div class="start-screen active">
+            <div class="intro-text">
+                <p>クイズゲームへようこそ！</p>
+                <p>全10問のクイズに挑戦しましょう。</p>
+                <p>準備ができたら、スタートボタンを押してください。</p>
+            </div>
+            <button class="start-btn" onclick="startQuiz()">スタート</button>
+        </div>
+
+        <!-- クイズ画面 -->
+        <div class="quiz-screen">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="question-counter" id="questionCounter"></div>
+            <div class="question-text" id="questionText"></div>
+            <div class="options" id="options"></div>
+            <div class="feedback" id="feedback"></div>
+            <button class="next-btn" id="nextBtn" onclick="nextQuestion()">次の問題</button>
+        </div>
+
+        <!-- 結果画面 -->
+        <div class="result-screen">
+            <div class="score-message" id="scoreMessage"></div>
+            <div class="score" id="score"></div>
+            <div class="score-details" id="scoreDetails"></div>
+            <button class="restart-btn" onclick="restartQuiz()">もう一度挑戦</button>
+        </div>
+    </div>
+
+    <script>
+        // クイズデータ
+        const quizData = [
+            {
+                question: "日本の首都はどこですか？",
+                options: ["大阪", "東京", "京都", "名古屋"],
+                correct: 1,
+                explanation: "日本の首都は東京です。1868年に江戸から東京に改名されました。"
+            },
+            {
+                question: "地球上で最も大きな海洋はどれですか？",
+                options: ["大西洋", "インド洋", "太平洋", "北極海"],
+                correct: 2,
+                explanation: "太平洋は地球上で最も大きな海洋で、地球の表面積の約3分の1を占めています。"
+            },
+            {
+                question: "人間の体で最も大きな臓器はどれですか？",
+                options: ["心臓", "肝臓", "肺", "皮膚"],
+                correct: 3,
+                explanation: "皮膚は人間の体で最も大きな臓器です。成人の皮膚の表面積は約1.6〜2平方メートルあります。"
+            },
+            {
+                question: "富士山の高さは約何メートルですか？",
+                options: ["2,776m", "3,776m", "4,776m", "5,776m"],
+                correct: 1,
+                explanation: "富士山の標高は3,776メートルで、日本で最も高い山です。"
+            },
+            {
+                question: "光の速さは約何km/秒ですか？",
+                options: ["100,000km/秒", "200,000km/秒", "300,000km/秒", "400,000km/秒"],
+                correct: 2,
+                explanation: "光の速さは真空中で約30万km/秒（正確には299,792,458m/秒）です。"
+            },
+            {
+                question: "一年は何日ですか？（平年の場合）",
+                options: ["364日", "365日", "366日", "367日"],
+                correct: 1,
+                explanation: "平年は365日です。うるう年は366日になります。"
+            },
+            {
+                question: "日本で最も長い川はどれですか？",
+                options: ["利根川", "石狩川", "信濃川", "木曽川"],
+                correct: 2,
+                explanation: "信濃川は全長367kmで、日本で最も長い川です。"
+            },
+            {
+                question: "元素記号「Au」が表す元素は何ですか？",
+                options: ["銀", "金", "銅", "鉄"],
+                correct: 1,
+                explanation: "Auは金（ゴールド）の元素記号です。ラテン語のAurum（オーラム）に由来します。"
+            },
+            {
+                question: "日本の都道府県の数はいくつですか？",
+                options: ["45", "46", "47", "48"],
+                correct: 2,
+                explanation: "日本には47の都道府県があります。1都1道2府43県で構成されています。"
+            },
+            {
+                question: "地球が太陽の周りを1周するのにかかる時間は約何日ですか？",
+                options: ["265日", "305日", "365日", "425日"],
+                correct: 2,
+                explanation: "地球が太陽の周りを1周するのに約365日かかります。これが1年の長さの基準となっています。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let selectedAnswer = null;
+        let answered = false;
+
+        function startQuiz() {
+            document.querySelector('.start-screen').classList.remove('active');
+            document.querySelector('.quiz-screen').classList.add('active');
+            currentQuestion = 0;
+            score = 0;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            answered = false;
+            selectedAnswer = null;
+            const question = quizData[currentQuestion];
+
+            // 進捗バーを更新
+            const progress = ((currentQuestion) / quizData.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+
+            // 問題番号を表示
+            document.getElementById('questionCounter').textContent =
+                `問題 ${currentQuestion + 1} / ${quizData.length}`;
+
+            // 問題文を表示
+            document.getElementById('questionText').textContent = question.question;
+
+            // 選択肢を表示
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                optionElement.textContent = option;
+                optionElement.onclick = () => selectAnswer(index);
+                optionsContainer.appendChild(optionElement);
+            });
+
+            // フィードバックを非表示
+            document.getElementById('feedback').classList.remove('show');
+            document.getElementById('nextBtn').classList.remove('show');
+        }
+
+        function selectAnswer(index) {
+            if (answered) return;
+
+            answered = true;
+            selectedAnswer = index;
+            const question = quizData[currentQuestion];
+            const options = document.querySelectorAll('.option');
+
+            // すべての選択肢を無効化
+            options.forEach(option => option.classList.add('disabled'));
+
+            // 正解・不正解を表示
+            if (index === question.correct) {
+                options[index].classList.add('correct');
+                score++;
+                showFeedback(true, question.explanation);
+            } else {
+                options[index].classList.add('incorrect');
+                options[question.correct].classList.add('correct');
+                showFeedback(false, question.explanation);
+            }
+
+            // 次へボタンを表示
+            document.getElementById('nextBtn').classList.add('show');
+        }
+
+        function showFeedback(isCorrect, explanation) {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show ' + (isCorrect ? 'correct' : 'incorrect');
+            feedback.innerHTML = `
+                <strong>${isCorrect ? '正解！' : '不正解'}</strong><br>
+                ${explanation}
+            `;
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+
+            if (currentQuestion < quizData.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.querySelector('.quiz-screen').classList.remove('active');
+            document.querySelector('.result-screen').classList.add('active');
+
+            const percentage = Math.round((score / quizData.length) * 100);
+
+            // スコアメッセージを設定
+            let message = '';
+            if (percentage === 100) {
+                message = '完璧です！素晴らしい！';
+            } else if (percentage >= 80) {
+                message = 'とても良くできました！';
+            } else if (percentage >= 60) {
+                message = 'よくできました！';
+            } else if (percentage >= 40) {
+                message = 'もう少し頑張りましょう！';
+            } else {
+                message = '次回は頑張りましょう！';
+            }
+
+            document.getElementById('scoreMessage').textContent = message;
+            document.getElementById('score').textContent = `${score} / ${quizData.length}`;
+            document.getElementById('scoreDetails').innerHTML = `
+                <p style="font-size: 18px; margin-bottom: 10px;">正答率: ${percentage}%</p>
+                <p style="color: #666;">正解数: ${score}問</p>
+                <p style="color: #666;">不正解数: ${quizData.length - score}問</p>
+            `;
+        }
+
+        function restartQuiz() {
+            document.querySelector('.result-screen').classList.remove('active');
+            document.querySelector('.start-screen').classList.add('active');
+        }
+    </script>
+</body>
+</html>
